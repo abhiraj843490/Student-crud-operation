@@ -1,19 +1,19 @@
 package com.studentcrudoperation.service;
 
-import com.studentcrudoperation.Student.dto.StudentDto;
-import com.studentcrudoperation.ui.model.response.StudentDetailsResponse;
+import com.studentcrudoperation.model.response.StudentDetailsResponse;
+import com.studentcrudoperation.studentdto.AuthRequest;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
 import java.util.List;
 
 public interface StudentService extends UserDetailsService{
-    StudentDto fetchAllDetail(StudentDto studentDto);
 
     List<StudentDetailsResponse> getAllDetails();
 
-    StudentDetailsResponse fetchById(Long id);
+    StudentDetailsResponse getDetailById(Long id);
 
     void deleteStudentById(Long id);
+
 
     //StudentDetailsResponse updateStudentDetail(Long id);
 

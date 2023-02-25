@@ -1,4 +1,4 @@
-package com.studentcrudoperation.ui.model.response;
+package com.studentcrudoperation.model.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

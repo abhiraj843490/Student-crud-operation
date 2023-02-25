@@ -1,65 +1,95 @@
 package com.studentcrudoperation.controller;
 
-import com.studentcrudoperation.Student.dto.StudentDto;
+import com.studentcrudoperation.studentdto.AuthRequest;
+import com.studentcrudoperation.studentdto.StudentDto;
 import com.studentcrudoperation.StudentRepository;
 import com.studentcrudoperation.entity.StudentEntity;
+import com.studentcrudoperation.service.JwtService;
 import com.studentcrudoperation.service.StudentService;
-import com.studentcrudoperation.ui.model.request.StudentDetailModelRequest;
-import com.studentcrudoperation.ui.model.response.StudentDetailsResponse;
+import com.studentcrudoperation.model.request.StudentDetailModelRequest;
+import com.studentcrudoperation.model.response.StudentDetailsResponse;
 
-import lombok.Getter;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
+@RequestMapping()
 @RestController
 public class StudentController {
 	@Autowired
+	private AuthenticationManager authenticationManager;
+	@Autowired
 	StudentService studentService;
 
-	
+	@Autowired
+	BCryptPasswordEncoder encoder;
+	@Autowired
+	JwtService jwtService;
+	@Autowired
+	StudentRepository studentRepository;
+
 	@PostMapping("/student")
 	public StudentDetailsResponse postStudentDetail(@RequestBody StudentDetailModelRequest
 																studentDetailModelRequest) {
-		System.out.println(studentDetailModelRequest.getFirstName());
-
 		StudentDto studentDto = new StudentDto();
 
 		BeanUtils.copyProperties(studentDetailModelRequest,studentDto);
-		System.out.println("BeanUtils "+studentDto.getFirstName().toString());
+		studentDto.setPassword(encoder.encode(studentDto.getPassword()));
 
+		StudentEntity student = new StudentEntity();
+		BeanUtils.copyProperties(studentDto, student);
+
+		StudentEntity saved = studentRepository.save(student);
 		StudentDetailsResponse returnValue = new StudentDetailsResponse();
-		StudentDto createdStudent = studentService.fetchAllDetail(studentDto);
-
-		BeanUtils.copyProperties(createdStudent, returnValue);
-		System.out.println("studentDto "+returnValue.getFirstName());
+		BeanUtils.copyProperties(saved, returnValue);
 		return returnValue;
 	}
 
-	@GetMapping("/allDetails")
+	@GetMapping("/all")
+	@PreAuthorize("hasAuthority('ROLE_ADMIN')")
 	public List<StudentDetailsResponse>getAllDetails(){
 		return studentService.getAllDetails();
 	}
 
 	@GetMapping("/student/{id}")
-	public StudentDetailsResponse fetchById(@PathVariable (value = "id") Long id) {
+	@PreAuthorize("hasAuthority('ROLE_USER')")
+	public StudentDetailsResponse getDetailById(@PathVariable (value = "id") Long id) {
 		StudentDetailsResponse response = new StudentDetailsResponse();
-		response = studentService.fetchById(id);
+		response = studentService.getDetailById(id);
 		return response;
 	}
+
 	@DeleteMapping("/student/{id}")
 	public void deleteStudentById(@PathVariable(value = "id")Long id){
-//		StudentDetailsResponse response = new StudentDetailsResponse();
 		studentService.deleteStudentById(id);
-		//return response;
 	}
-//	@PutMapping("/{id}")
-//	public StudentDetailsResponse updateStudentDetail(@PathVariable(value = "id")Long id) {
-//		StudentDetailsResponse response = new StudentDetailsResponse();
-//		response=studentService.updateStudentDetail(id);
-//		return response;
-//	}
 
+	@PostMapping("/authenticate")
+	public String authenticateAndGetToken(@RequestBody AuthRequest authRequest){
+		Authentication authentication
+				= authenticationManager
+				.authenticate(new
+						UsernamePasswordAuthenticationToken(
+								authRequest.getEmail(),
+						authRequest.getPassword()));
+
+		if(authentication.isAuthenticated()){
+			return jwtService.generateToken(authRequest.getEmail());
+		}
+		else {
+			throw new UsernameNotFoundException("invalid user request");
+		}
+		//this allows to all to get the token,
+		// but this is not a correct way
+		// so, need to authenticate the user
+		//return jwtService.generateToken(authRequest.getEmail());
+
+	}
 }
