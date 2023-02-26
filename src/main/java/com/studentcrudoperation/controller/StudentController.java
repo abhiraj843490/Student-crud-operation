@@ -1,5 +1,6 @@
 package com.studentcrudoperation.controller;
 
+import com.studentcrudoperation.shared.Utils;
 import com.studentcrudoperation.studentdto.AuthRequest;
 import com.studentcrudoperation.studentdto.StudentDto;
 import com.studentcrudoperation.StudentRepository;
@@ -34,16 +35,22 @@ public class StudentController {
 	JwtService jwtService;
 	@Autowired
 	StudentRepository studentRepository;
+	@Autowired
+	Utils utils;
 
 	@PostMapping("/student")
 	public StudentDetailsResponse postStudentDetail(@RequestBody StudentDetailModelRequest
 																studentDetailModelRequest) {
 		StudentDto studentDto = new StudentDto();
+		StudentEntity student = new StudentEntity();
 
 		BeanUtils.copyProperties(studentDetailModelRequest,studentDto);
+
 		studentDto.setPassword(encoder.encode(studentDto.getPassword()));
 
-		StudentEntity student = new StudentEntity();
+		String enrollment = utils.generateUserId(12);
+
+		studentDto.setEnrollment(enrollment);
 		BeanUtils.copyProperties(studentDto, student);
 
 		StudentEntity saved = studentRepository.save(student);
