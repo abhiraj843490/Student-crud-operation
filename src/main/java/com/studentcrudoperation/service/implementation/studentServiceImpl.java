@@ -1,9 +1,16 @@
 package com.studentcrudoperation.service.implementation;
 
+import com.studentcrudoperation.model.response.RestResponse;
 import com.studentcrudoperation.model.response.StudentDetailsResponse;
 import com.studentcrudoperation.studentdto.AuthRequest;
+import com.studentcrudoperation.studentdto.StudentDto;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -33,19 +40,17 @@ public class studentServiceImpl implements StudentService{
 			BeanUtils.copyProperties(student, studentDetailsResponse);
 			responseList.add(studentDetailsResponse);
 		}
-		for (int i=0;i<responseList.size();i++){
-			System.out.println(responseList.get(i));
-		}
 		return responseList;
 	}
 
 	@Override
-	public StudentDetailsResponse getDetailById(Long id) {
-		StudentDetailsResponse response = new StudentDetailsResponse();
+	public StudentDetailsResponse getDetailByEnrollment(String id) {
+		StudentDetailsResponse returnValue = new StudentDetailsResponse();
+		//System.out.println(id);
+		Optional<StudentEntity> studentEntity = studentRepository.findByEnrollment(id);
 
-		Optional<StudentEntity> studentEntity = studentRepository.findById(id);
-		BeanUtils.copyProperties(studentEntity, response);
-		return response;
+		BeanUtils.copyProperties(studentEntity.get(), returnValue);
+		return returnValue;
 	}
 
 	@Override
@@ -53,6 +58,36 @@ public class studentServiceImpl implements StudentService{
 		StudentDetailsResponse response = new StudentDetailsResponse();
 		studentRepository.deleteById(id);
 	}
+
+	@Override
+	public StudentDto updateDetail(Long studentId, StudentDto studentDto) {
+		StudentDto returnValue = new StudentDto();
+		Optional<StudentEntity> student= studentRepository.findById(studentId);
+//		if(student==null) {
+//			throw new UsernameNotFoundException(studentId);
+//		}
+
+		student.get().setFirstName(studentDto.getFirstName());
+		student.get().setLastName(student.get().getLastName());
+		StudentEntity updated = studentRepository.save(student.get());
+		BeanUtils.copyProperties(updated,returnValue);
+		return returnValue;
+	}
+
+	@Override
+	public List<StudentDto> getUsers(int page, int limit) {
+		List<StudentDto> returnValue = new ArrayList<>();
+		Pageable pageable = PageRequest.of(page, limit);
+		Page<StudentEntity>studentPage = studentRepository.findAll(pageable);
+		List<StudentEntity> users = studentPage.getContent();
+		for(StudentEntity student:users){
+			StudentDto studentDto = new StudentDto();
+			BeanUtils.copyProperties(student, studentDto);
+			returnValue.add(studentDto);
+		}
+		return returnValue;
+	}
+
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 		return null;

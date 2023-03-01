@@ -1,10 +1,14 @@
 package com.studentcrudoperation.service;
 
+import com.studentcrudoperation.StudentRepository;
+import com.studentcrudoperation.entity.StudentEntity;
+import com.studentcrudoperation.studentdto.StudentDto;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -16,8 +20,9 @@ import java.util.function.Function;
 
 @Component
 public class JwtService {
+    @Autowired
+    StudentRepository studentRepository;
     private static final String SECRET = "5367566B5970337336763979244226452948404D6351655468576D5A71347437";
-
     public String extractUsername(String token){
         return extractClaim(token, Claims::getSubject);
     }
@@ -47,13 +52,17 @@ public class JwtService {
     }
     public Boolean validateToken(String token, UserDetails userDetails){
         final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername())&& !isTokenExpired(token));
+        String email = username.substring(10);
+        return (email.equals(userDetails.getUsername())&& !isTokenExpired(token));
     }
+
 
     // generate token
     public String generateToken(String email){
         Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, email);
+        StudentEntity student = studentRepository.findEnrollmentByEmail(email);
+        System.out.println(student.getEnrollment()+email);
+        return createToken(claims, student.getEnrollment()+email);
     }
     private String createToken(Map<String, Object> claims, String email) {
 

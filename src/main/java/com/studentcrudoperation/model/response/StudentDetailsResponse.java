@@ -14,7 +14,8 @@ public class StudentDetailsResponse implements Serializable {
 	private static final long serialVersionUID = 3L;
 	private String firstName;
 	private String lastName;
-	private String Enrollment;
+	private String enrollment;
+	private String phoneNumber;
 	private String email;
 
 }
